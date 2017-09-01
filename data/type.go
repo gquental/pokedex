@@ -8,7 +8,7 @@ type Type struct {
 }
 
 type DamageType struct {
-	Type
+	Type   `bson:",inline"`
 	Damage struct {
 		NoDamageTo       []Type `bson:"noDamageTo" json:"no_damage_to"`
 		HalfDamageTo     []Type `bson:"halfDamageTo" json:"half_damage_to"`

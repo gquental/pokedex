@@ -14,7 +14,16 @@
 
 package main
 
-import "github.com/gquental/pokedex/cli/cmd"
+import (
+	"os"
+
+	"github.com/gquental/pokedex/cli/cmd"
+	"github.com/sirupsen/logrus"
+)
+
+func init() {
+	logrus.SetOutput(os.Stdout)
+}
 
 func main() {
 	cmd.Execute()
