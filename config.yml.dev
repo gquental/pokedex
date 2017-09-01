@@ -1,0 +1,3 @@
+api_endpoint: http://localhost.com/
+db_address: localhost
+database: pokedex
