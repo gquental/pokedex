@@ -29,7 +29,7 @@ func fetchTypesFromAPI() {
 	for {
 		select {
 		case typeDetail := <-typesCh:
-			fmt.Println(typeDetail)
+			fmt.Println(typeDetail.Name)
 			countTypes++
 		}
 
@@ -70,8 +70,20 @@ func fetchTypeList(url string, typeCountCh chan int, typesCh chan data.DamageTyp
 	}
 
 	for _, item := range types.Results {
-		fmt.Println(item)
+		go fetchTypeDetail(item.Url, typesCh)
 	}
+}
+
+func fetchTypeDetail(url string, typesCh chan data.DamageType) {
+	body, err := requestAPI(url)
+	if err != nil {
+
+	}
+
+	typeDetail := data.DamageType{}
+	json.Unmarshal(body, &typeDetail)
+
+	typesCh <- typeDetail
 }
 
 func requestAPI(endpoint string) ([]byte, error) {

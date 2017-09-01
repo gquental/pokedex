@@ -10,12 +10,11 @@ type Type struct {
 type DamageType struct {
 	Type
 	Damage struct {
-		NoDamageTo       []Type `bson:"noDamageTo"`
-		HalfDamageTo     []Type `bson:"halfDamageTo"`
-		DoubleDamageTo   []Type `bson:"doubleDamageTo"`
-		NoDamageFrom     []Type `bson:"noDamageFrom"`
-		HalfDamageFrom   []Type `bson:"halfDamageFrom"`
-		DoubleDamageFrom []Type `bson:"doubleDamageFrom"`
-	} `bson:"damage"`
+		NoDamageTo       []Type `bson:"noDamageTo" json:"no_damage_to"`
+		HalfDamageTo     []Type `bson:"halfDamageTo" json:"half_damage_to"`
+		DoubleDamageTo   []Type `bson:"doubleDamageTo" json:"double_damage_to"`
+		NoDamageFrom     []Type `bson:"noDamageFrom" json:"no_damage_from"`
+		HalfDamageFrom   []Type `bson:"halfDamageFrom" json:"half_damage_from"`
+		DoubleDamageFrom []Type `bson:"doubleDamageFrom" json:"double_damage_from"`
+	} `bson:"damage" json:"damage_relations"`
 }
-
