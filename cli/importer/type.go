@@ -66,6 +66,10 @@ func (t *typeList) GetNext() string {
 	return t.Next
 }
 
+func (t *typeList) EraseNext() {
+	t.Next = ""
+}
+
 func (t *typeList) List() []ItemEntry {
 	entries := []ItemEntry{}
 
