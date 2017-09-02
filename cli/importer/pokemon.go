@@ -3,9 +3,15 @@ package importer
 import (
 	"fmt"
 
+	"github.com/gquental/pokedex/persistence"
+
+	"gopkg.in/mgo.v2/bson"
+
 	"encoding/json"
 
 	"github.com/gquental/pokedex/config"
+	"github.com/gquental/pokedex/data"
+	"github.com/sirupsen/logrus"
 )
 
 func ImportPokemons() {
@@ -15,6 +21,7 @@ func ImportPokemons() {
 
 type pokemonEntry struct {
 	Name      string
+	ID        int `json:"id"`
 	Abilities []struct {
 		Ability struct {
 			Name string
@@ -38,7 +45,54 @@ type pokemonEntry struct {
 }
 
 func (p *pokemonEntry) Store() {
-	fmt.Println(p)
+	pokemon := data.Pokemon{Name: p.Name, PokemonID: p.ID}
+	for _, item := range p.Abilities {
+		pokemon.Abilities = append(
+			pokemon.Abilities,
+			item.Ability.Name,
+		)
+	}
+
+	for _, item := range p.Stats {
+		pokemon.Stats = append(
+			pokemon.Stats,
+			data.PokemonStat{
+				Name:       item.Stat.Name,
+				Base:       item.BaseStat,
+				BattleOnly: item.Stat.Expanded.BattleOnly,
+			},
+		)
+	}
+
+	for _, item := range p.Types {
+		pokemon.Types = append(
+			pokemon.Types,
+			item.Type.Name,
+		)
+	}
+
+	session, collection, err := persistence.GetCollection("pokemons")
+	if err != nil {
+		return
+	}
+	defer session.Close()
+
+	oldPokemon := data.Pokemon{}
+	err = collection.Find(bson.M{"name": pokemon.Name}).One(&oldPokemon)
+
+	if err == nil {
+		logrus.Error(fmt.Errorf("Pokemon %s already inserted.", pokemon.Name))
+		return
+	}
+
+	err = collection.Insert(pokemon)
+
+	logrus.Info(fmt.Sprintf("Pokemon %s inserted", pokemon.Name))
+
+	if err != nil {
+		logrus.Error("Couldn't insert pokemon %s: %v", pokemon.Name, err)
+		return
+	}
 }
 
 func (p *pokemonEntry) ExpandDetails() []ExpandEntry {

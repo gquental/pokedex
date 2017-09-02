@@ -99,7 +99,7 @@ func fetchFromAPI(importEntry Importable) {
 func fetchList(callNumber int, importEntry Importable, url string, countCh chan int, entryCh chan ImportableDetail) {
 	body, err := requestAPI(url)
 	if err != nil {
-		logrus.Error(fmt.Errorf("Problem in type list request: %v", err))
+		logrus.Error(fmt.Errorf("Problem in list request: %v", err))
 		close(entryCh)
 		if callNumber == 0 {
 			countCh <- 0
@@ -127,7 +127,7 @@ func fetchList(callNumber int, importEntry Importable, url string, countCh chan 
 func fetchDetail(entry ItemEntry, entryCh chan ImportableDetail) {
 	body, err := requestAPI(entry.Url)
 	if err != nil {
-		logrus.Error(fmt.Errorf("Problem in type detail request: %v", err))
+		logrus.Error(fmt.Errorf("Problem in detail request: %v", err))
 		close(entryCh)
 		return
 	}
