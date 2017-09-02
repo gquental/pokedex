@@ -65,6 +65,10 @@ func fetchTypeList(url string, typeCountCh chan int, typesCh chan data.DamageTyp
 		typeCountCh <- types.Count
 	}
 
+	if types.Next != "" {
+		go fetchTypeList(types.Next, typeCountCh, typesCh)
+	}
+
 	for _, item := range types.Results {
 		go fetchTypeDetail(item.Url, typesCh)
 	}
