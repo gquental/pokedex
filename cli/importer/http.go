@@ -10,15 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type listType struct {
-	Count   int
-	Results []struct {
-		Url  string
-		Name string
-	}
-	Next string
-}
-
 func requestAPI(endpoint string) ([]byte, error) {
 	client := http.Client{
 		Timeout: 60 * time.Second,
@@ -69,6 +60,7 @@ type ExpandEntry struct {
 type Importable interface {
 	GetCount() int
 	GetNext() string
+	EraseNext()
 	List() []ItemEntry
 	GetEndpoint() string
 }
@@ -114,6 +106,8 @@ func fetchList(callNumber int, importEntry Importable, url string, countCh chan 
 		}
 		return
 	}
+
+	importEntry.EraseNext()
 
 	json.Unmarshal(body, importEntry)
 	if callNumber == 0 {
