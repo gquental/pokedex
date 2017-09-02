@@ -1,7 +1,6 @@
 package importer
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/gquental/pokedex/config"
@@ -12,83 +11,23 @@ import (
 )
 
 func ImportTypes() {
-	fetchTypesFromAPI()
+	tList := &typeList{}
+	fetchFromAPI(tList)
 }
 
-func fetchTypesFromAPI() {
-	typeCountCh := make(chan int)
-	typesCh := make(chan data.DamageType)
-
-	var totalTypes int
-	var countTypes int
-
-	go fetchTypeList("", typeCountCh, typesCh)
-	totalTypes = <-typeCountCh
-	close(typeCountCh)
-
-	for {
-		select {
-		case typeDetail := <-typesCh:
-			storeType(typeDetail)
-			countTypes++
-		}
-
-		if countTypes == totalTypes {
-			close(typesCh)
-			break
-		}
-	}
-
+type typeEntry struct {
+	data.DamageType
+	FinalData data.DamageType
 }
 
-func fetchTypeList(url string, typeCountCh chan int, typesCh chan data.DamageType) {
-	firstTime := false
-	if url == "" {
-		firstTime = true
-		url = fmt.Sprintf("%s%s", config.Config.APIEndpoint, "type")
-	}
-
-	body, err := requestAPI(url)
-	if err != nil {
-		logrus.Error(fmt.Errorf("Problem in type list request: %v", err))
-		close(typesCh)
-		if firstTime {
-			typeCountCh <- 0
-		}
-		return
-	}
-
-	types := listType{}
-	json.Unmarshal(body, &types)
-
-	if firstTime {
-		typeCountCh <- types.Count
-	}
-
-	if types.Next != "" {
-		go fetchTypeList(types.Next, typeCountCh, typesCh)
-	}
-
-	for _, item := range types.Results {
-		go fetchTypeDetail(item.Url, typesCh)
-	}
+func (t *typeEntry) ExpandDetails() []ExpandEntry {
+	return nil
 }
 
-func fetchTypeDetail(url string, typesCh chan data.DamageType) {
-	body, err := requestAPI(url)
-	if err != nil {
-		logrus.Error(fmt.Errorf("Problem in type detail request: %v", err))
-		close(typesCh)
-		return
-	}
+func (t *typeEntry) Store() {
+	t.FinalData.Name = t.Name
+	t.FinalData.Damage = t.Damage
 
-	typeDetail := data.DamageType{}
-	json.Unmarshal(body, &typeDetail)
-
-	typesCh <- typeDetail
-}
-
-func storeType(typeDetail data.DamageType) {
 	session, collection, err := persistence.GetCollection("types")
 	if err != nil {
 		return
@@ -96,17 +35,47 @@ func storeType(typeDetail data.DamageType) {
 	defer session.Close()
 
 	oldType := data.DamageType{}
-	err = collection.Find(bson.M{"name": typeDetail.Name}).One(&oldType)
+	err = collection.Find(bson.M{"name": t.FinalData.Name}).One(&oldType)
 
 	if err == nil {
-		logrus.Error(fmt.Errorf("Type %s already inserted.", typeDetail.Name))
+		logrus.Error(fmt.Errorf("Type %s already inserted.", t.FinalData.Name))
 		return
 	}
 
-	err = collection.Insert(typeDetail)
+	err = collection.Insert(t.FinalData)
 
 	if err != nil {
-		logrus.Error("Couldn't insert type %s: %v", typeDetail.Name, err)
+		logrus.Error("Couldn't insert type %s: %v", t.FinalData.Name, err)
 		return
 	}
+}
+
+type typeList struct {
+	ListDefinition
+}
+
+func (t *typeList) GetEndpoint() string {
+	return fmt.Sprintf("%s%s", config.Config.APIEndpoint, "type")
+}
+
+func (t *typeList) GetCount() int {
+	return t.Count
+}
+
+func (t *typeList) GetNext() string {
+	return t.Next
+}
+
+func (t *typeList) List() []ItemEntry {
+	entries := []ItemEntry{}
+
+	for _, item := range t.Results {
+		entry := &typeEntry{}
+		entries = append(
+			entries,
+			ItemEntry{Url: item.Url, Type: entry},
+		)
+	}
+
+	return entries
 }
