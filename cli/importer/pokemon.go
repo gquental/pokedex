@@ -1,77 +1,35 @@
 package importer
 
 import (
-	"encoding/json"
 	"fmt"
 
+	"encoding/json"
+
 	"github.com/gquental/pokedex/config"
-	"github.com/sirupsen/logrus"
 )
 
 func ImportPokemons() {
-	fetchPokemonsFromAPI()
+	pList := &pokemonList{}
+	fetchFromAPI(pList)
 }
 
-func fetchPokemonsFromAPI() {
-	pokemonCountCh := make(chan int)
-	pokemonCh := make(chan pokemonType)
-
-	var totalPokemons int
-	var countPokemons int
-
-	go fetchPokemonList("", pokemonCountCh, pokemonCh)
-	totalPokemons = <-pokemonCountCh
-	close(pokemonCountCh)
-
-	for {
-		select {
-		case pokemon := <-pokemonCh:
-			fmt.Println(pokemon)
-			countPokemons++
-		}
-
-		if countPokemons == totalPokemons {
-			close(pokemonCh)
-			break
+type pokemonEntry struct {
+	Name      string
+	Abilities []struct {
+		Ability struct {
+			Name string
 		}
 	}
-}
-
-func fetchPokemonList(url string, pokemonCountCh chan int, pokemonCh chan pokemonType) {
-	firstTime := false
-	if url == "" {
-		firstTime = true
-		url = fmt.Sprintf("%s%s", config.Config.APIEndpoint, "pokemon?limit=100")
-	}
-
-	body, err := requestAPI(url)
-	if err != nil {
-		logrus.Error(fmt.Errorf("Problem in pokemon list request: %v", err))
-		close(pokemonCh)
-		if firstTime {
-			pokemonCountCh <- 0
+	Stats []struct {
+		Stat struct {
+			Url      string
+			Name     string
+			Expanded struct {
+				BattleOnly bool `json:"is_battle_only"`
+			}
 		}
-		return
+		BaseStat int `json:"base_stat"`
 	}
-
-	pokemons := listType{}
-	json.Unmarshal(body, &pokemons)
-
-	if firstTime {
-		pokemonCountCh <- pokemons.Count
-	}
-
-	if pokemons.Next != "" {
-		go fetchPokemonList(pokemons.Next, pokemonCountCh, pokemonCh)
-	}
-
-	for _, item := range pokemons.Results {
-		go fetchPokemonDetail(item.Url, pokemonCh)
-	}
-}
-
-type pokemonType struct {
-	Name  string
 	Types []struct {
 		Type struct {
 			Name string
@@ -79,16 +37,61 @@ type pokemonType struct {
 	}
 }
 
-func fetchPokemonDetail(url string, pokemonCh chan pokemonType) {
-	body, err := requestAPI(url)
-	if err != nil {
-		logrus.Error(fmt.Errorf("Problem in pokemon detail request: %v", err))
-		close(pokemonCh)
-		return
+func (p *pokemonEntry) Store() {
+	fmt.Println(p)
+}
+
+func (p *pokemonEntry) ExpandDetails() []ExpandEntry {
+	entries := []ExpandEntry{}
+	for index, item := range p.Stats {
+		entries = append(
+			entries,
+			ExpandEntry{
+				Url:   item.Stat.Url,
+				Index: index,
+				Assign: func(entry interface{}, body []byte, index int) ImportableDetail {
+					pokemon := entry.(*pokemonEntry)
+					json.Unmarshal(body, &pokemon.Stats[index].Stat.Expanded)
+
+					return pokemon
+				},
+			},
+		)
 	}
 
-	pokemon := pokemonType{}
-	json.Unmarshal(body, &pokemon)
+	return entries
+}
 
-	pokemonCh <- pokemon
+type pokemonList struct {
+	ListDefinition
+}
+
+func (p *pokemonList) GetEndpoint() string {
+	return fmt.Sprintf("%s%s", config.Config.APIEndpoint, "pokemon?limit=100")
+}
+
+func (p *pokemonList) GetCount() int {
+	return p.Count
+}
+
+func (p *pokemonList) GetNext() string {
+	return p.Next
+}
+
+func (p *pokemonList) EraseNext() {
+	p.Next = ""
+}
+
+func (p *pokemonList) List() []ItemEntry {
+	entries := []ItemEntry{}
+
+	for _, item := range p.Results {
+		entry := &pokemonEntry{}
+		entries = append(
+			entries,
+			ItemEntry{Url: item.Url, Type: entry},
+		)
+	}
+
+	return entries
 }
