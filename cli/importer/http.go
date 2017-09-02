@@ -18,7 +18,7 @@ type listType struct {
 
 func requestAPI(endpoint string) ([]byte, error) {
 	client := http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: 60 * time.Second,
 	}
 
 	req, err := http.NewRequest("GET", endpoint, nil)
