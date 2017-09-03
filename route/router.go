@@ -12,6 +12,7 @@ func Load() *gin.Engine {
 	pokemon := router.Group("/pokemon")
 	{
 		pokemon.GET("/:pokemon", server.GetPokemonDetail)
+		pokemon.GET("/", server.GetPokemonList)
 	}
 
 	return router
