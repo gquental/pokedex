@@ -9,6 +9,7 @@ import (
 type Configuration struct {
 	APIEndpoint string `mapstructure:"api_endpoint"`
 
+	Host      string
 	Port      string
 	DBAddress string `mapstructure:"db_address"`
 	Database  string

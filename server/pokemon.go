@@ -10,6 +10,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gquental/pokedex/config"
 	"github.com/gquental/pokedex/data"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -79,13 +80,19 @@ func GetPokemonList(c *gin.Context) {
 
 	pages := count / 20
 	nextPage := page + 1
-	next := fmt.Sprintf("%s%s%s%d", c.Request.URL.Scheme, c.Request.URL.Host, "pokemon?page=", nextPage)
+	previousPage := page - 1
 
+	next := fmt.Sprintf("http://%s:%s/%s%d", config.Config.Host, config.Config.Port, "pokemon?page=", nextPage)
+	previous := fmt.Sprintf("http://%s:%s/%s%d", config.Config.Host, config.Config.Port, "pokemon?page=", previousPage)
 	if page >= pages {
 		next = ""
 	}
 
-	c.JSON(http.StatusOK, gin.H{"count": count, "pokemons": pokemons, "next": next})
+	if page <= 1 {
+		previous = ""
+	}
+
+	c.JSON(http.StatusOK, gin.H{"count": count, "pokemons": pokemons, "previous": previous, "next": next})
 
 }
 
