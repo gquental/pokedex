@@ -65,7 +65,7 @@ func GetPokemonList(c *gin.Context) {
 	}
 
 	pokemons := []data.Pokemon{}
-	err := collection.Find(bson.M{}).Limit(20).Skip(20 * page).All(&pokemons)
+	err = collection.Find(bson.M{}).Limit(20).Skip(20 * page).All(&pokemons)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
@@ -81,7 +81,7 @@ func GetPokemonList(c *gin.Context) {
 	nextPage := page + 1
 	next := fmt.Sprintf("%s%s%s%d", c.Request.URL.Scheme, c.Request.URL.Host, "pokemon?page=", nextPage)
 
-	if page == pages {
+	if page >= pages {
 		next = ""
 	}
 
