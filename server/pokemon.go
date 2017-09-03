@@ -5,7 +5,12 @@ import (
 
 	"github.com/gquental/pokedex/persistence"
 
+	"strconv"
+
+	"fmt"
+
 	"github.com/gin-gonic/gin"
+	"github.com/gquental/pokedex/config"
 	"github.com/gquental/pokedex/data"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -45,6 +50,50 @@ func GetPokemonDetail(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"pokemon": pokemon, "damages": types})
+}
+
+func GetPokemonList(c *gin.Context) {
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil {
+		page = 1
+	}
+
+	session, collection, err := persistence.GetCollection("pokemons")
+	defer session.Close()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "It was not possible to connect to pokemon collection"})
+		return
+	}
+
+	pokemons := []data.Pokemon{}
+	err = collection.Find(bson.M{}).Limit(20).Skip(20 * page).All(&pokemons)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+
+	count, err := collection.Count()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+
+	pages := count / 20
+	nextPage := page + 1
+	previousPage := page - 1
+
+	next := fmt.Sprintf("http://%s:%s/%s%d", config.Config.Host, config.Config.Port, "pokemon?page=", nextPage)
+	previous := fmt.Sprintf("http://%s:%s/%s%d", config.Config.Host, config.Config.Port, "pokemon?page=", previousPage)
+	if page >= pages {
+		next = ""
+	}
+
+	if page <= 1 {
+		previous = ""
+	}
+
+	c.JSON(http.StatusOK, gin.H{"count": count, "pokemons": pokemons, "previous": previous, "next": next})
+
 }
 
 func getTypes(pokemon data.Pokemon) ([]data.DamageType, error) {
