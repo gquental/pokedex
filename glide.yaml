@@ -1,0 +1,13 @@
+package: github.com/gquental/pokedex
+import:
+- package: github.com/gin-gonic/gin
+  version: ~1.2.0
+- package: github.com/mitchellh/go-homedir
+- package: github.com/sirupsen/logrus
+  version: ~1.0.3
+- package: github.com/spf13/cobra
+- package: github.com/spf13/viper
+  version: ~1.0.0
+- package: gopkg.in/mgo.v2
+  subpackages:
+  - bson
