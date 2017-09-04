@@ -1,10 +1,18 @@
 hash: 7b077cce238abe104bae340a371b62203fdcaf61b4fe3fcdf1a111c3f6895c36
-updated: 2017-09-03T19:57:56.411078045-03:00
+updated: 2017-09-03T20:54:27.134407267-03:00
 imports:
+- name: github.com/dgrijalva/jwt-go
+  version: a539ee1a749a2b895533f979515ac7e6e0f5b650
+  subpackages:
+  - request
 - name: github.com/fsnotify/fsnotify
   version: 4da3e2cfbabc9f751898f250b49f2439785783a1
 - name: github.com/gin-contrib/sse
   version: 22d885f9ecc78bf4ee5d72b937e4bbcdc58e8cae
+- name: github.com/gin-gonic/contrib
+  version: 0f937ce6d016f44b2f5b1f03787e055977e7c0b8
+  subpackages:
+  - jwt
 - name: github.com/gin-gonic/gin
   version: d459835d2b077e44f7c9b453505ee29881d5d12d
   subpackages:
