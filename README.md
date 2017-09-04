@@ -11,6 +11,8 @@ You must have installed
 
 ## Install
 
+Before executing the commands, be sure to copy the **config.yml.dev** to **config.yml**
+
 To run the application we must execute two commands, one to build the images and other to run the server.
 
 - ```make build```
